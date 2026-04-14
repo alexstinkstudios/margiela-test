@@ -2,7 +2,7 @@
 
 A luxury-branded AI-powered tool that identifies, analyzes, and ranks potential retail partners for Maison Margiela wholesale distribution in any city worldwide.
 
-![Maison Margiela Retail Prospector](https://img.shields.io/badge/Powered%20by-Claude%20API-black?style=flat-square)
+![Powered by Claude](https://img.shields.io/badge/Powered%20by-Claude%20API-black?style=flat-square)
 
 ## Features
 
@@ -21,76 +21,102 @@ The app runs a **3-step AI pipeline**:
 2. **Verify** — Each store is checked via web search to confirm it's currently open
 3. **Filter & Rank** — Closed stores are removed; addresses/details are corrected from live data
 
-## Getting Started
+## Deploy to Vercel
 
-### Prerequisites
+### 1. Push to GitHub
 
-- [Node.js](https://nodejs.org/) 18+
-- An [Anthropic API key](https://console.anthropic.com/)
+```bash
+git init
+git add .
+git commit -m "Initial commit"
+git remote add origin https://github.com/YOUR_USERNAME/maison-margiela-retail-prospector.git
+git push -u origin main
+```
 
-### Install & Run
+### 2. Import in Vercel
+
+1. Go to [vercel.com/new](https://vercel.com/new)
+2. Import your GitHub repository
+3. Vercel will auto-detect the Vite framework — no changes needed
+
+### 3. Add your API key (one time)
+
+1. In your Vercel project, go to **Settings → Environment Variables**
+2. Add a new variable:
+   - **Name:** `ANTHROPIC_API_KEY`
+   - **Value:** `sk-ant-api03-...` (your full Anthropic API key)
+   - **Environments:** Production, Preview, Development (check all three)
+3. Click **Save**
+4. **Redeploy** your project (go to Deployments → click ··· on the latest → Redeploy)
+
+That's it. The app will now use your key automatically — no prompt, no exposure to the browser.
+
+### How it stays secure
+
+Your API key never touches the browser. The architecture:
+
+```
+Browser  →  /api/claude  →  Anthropic API
+              (Vercel serverless function
+               reads key from env var)
+```
+
+The frontend calls `/api/claude`, which is a serverless function running on Vercel's servers. It reads `ANTHROPIC_API_KEY` from the environment and proxies the request. The key is never sent to or visible in the client.
+
+## Local Development
 
 ```bash
 git clone https://github.com/YOUR_USERNAME/maison-margiela-retail-prospector.git
 cd maison-margiela-retail-prospector
 npm install
-npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+Create a `.env` file in the project root:
 
-You'll be prompted to enter your Anthropic API key on first load. The key is stored in `sessionStorage` (browser tab only, never persisted to disk).
+```
+ANTHROPIC_API_KEY=sk-ant-api03-your-key-here
+```
 
-### Build for Production
+Then run:
 
 ```bash
-npm run build
+npx vercel dev
 ```
 
-The built files will be in `dist/`. Deploy to any static hosting (Vercel, Netlify, GitHub Pages, etc.).
-
-### Deploy to Vercel
-
-```bash
-npm i -g vercel
-vercel
-```
-
-### Deploy to Netlify
-
-```bash
-npm run build
-# drag & drop the `dist` folder to netlify.com, or use the CLI:
-npx netlify-cli deploy --prod --dir=dist
-```
+> **Note:** Use `vercel dev` (not `npm run dev`) locally so the `/api/claude` serverless function works. Plain `vite dev` won't have the API route.
 
 ## Project Structure
 
 ```
 maison-margiela-retail-prospector/
+├── api/
+│   └── claude.js           # Vercel serverless proxy (reads API key from env)
+├── src/
+│   ├── App.jsx             # Full application
+│   ├── main.jsx            # React mount point
+│   └── index.css           # Global reset
+├── public/
+│   └── favicon.svg         # Four-stitch favicon
 ├── index.html              # Entry HTML
 ├── package.json            # Dependencies & scripts
 ├── vite.config.js          # Vite configuration
-├── public/
-│   └── favicon.svg         # Four-stitch favicon
-└── src/
-    ├── main.jsx            # React mount point
-    ├── index.css           # Global reset
-    └── App.jsx             # Full application
+├── vercel.json             # Vercel routing & function config
+└── .gitignore
 ```
 
 ## Tech Stack
 
 - **React 18** — UI framework
 - **Vite** — Build tool
+- **Vercel Serverless Functions** — Secure API proxy
 - **Anthropic Claude API** — AI analysis + web search verification
 - **Google Fonts** — Cormorant Garamond, DM Mono, DM Sans
 
 ## Important Notes
 
-- **API key security**: The key is sent directly from the browser using Anthropic's `anthropic-dangerous-direct-browser-access` header. For production use, consider proxying API calls through a backend server.
-- **Contact details**: Buying contacts are AI-generated and illustrative. Always verify through official channels (LinkedIn Sales Navigator, industry directories, trade shows) before outreach.
-- **Rate limits**: Each search makes 2 API calls. Be mindful of your Anthropic API usage limits.
+- **Contact details** are AI-generated and illustrative. Always verify through official channels before outreach.
+- **Rate limits**: Each city search makes 2 API calls. Be mindful of your Anthropic usage limits.
+- **Function timeout**: Set to 60s in `vercel.json` to allow time for the web-search verification step.
 
 ## License
 

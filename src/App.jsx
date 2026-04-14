@@ -337,64 +337,9 @@ const LoadingState = ({ status }) => {
   );
 };
 
-// ─── API Key Modal ──────────────────────────────────────────────────────────
-
-const ApiKeyModal = ({ onSubmit }) => {
-  const [key, setKey] = useState("");
-  return (
-    <div style={{
-      position: "fixed", inset: 0, zIndex: 1000,
-      background: "rgba(26,26,26,0.85)", backdropFilter: "blur(8px)",
-      display: "flex", alignItems: "center", justifyContent: "center", padding: 24
-    }}>
-      <div style={{
-        background: "#fff", padding: "48px 40px", maxWidth: 480, width: "100%",
-        textAlign: "center"
-      }}>
-        <FourStitches size={32} color="#1a1a1a" />
-        <h2 style={{
-          fontFamily: "'Cormorant Garamond', serif", fontSize: 28, fontWeight: 400,
-          margin: "20px 0 8px", letterSpacing: "-0.02em"
-        }}>API Key Required</h2>
-        <p style={{
-          fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: "#888",
-          lineHeight: 1.6, marginBottom: 24
-        }}>
-          Enter your Anthropic API key to power the analysis engine.
-          Your key is stored only in this browser session.
-        </p>
-        <input
-          type="password"
-          value={key}
-          onChange={e => setKey(e.target.value)}
-          onKeyDown={e => e.key === "Enter" && key.trim() && onSubmit(key.trim())}
-          placeholder="sk-ant-..."
-          style={{
-            width: "100%", padding: "14px 16px", marginBottom: 16,
-            fontFamily: "'DM Mono', monospace", fontSize: 14,
-            border: "1px solid #d5d0c8", outline: "none", color: "#1a1a1a"
-          }}
-        />
-        <button
-          onClick={() => key.trim() && onSubmit(key.trim())}
-          disabled={!key.trim()}
-          style={{
-            width: "100%", padding: "14px",
-            fontFamily: "'DM Mono', monospace", fontSize: 11,
-            letterSpacing: 3, textTransform: "uppercase",
-            background: key.trim() ? "#1a1a1a" : "#ccc", color: "#fff",
-            border: "none", cursor: key.trim() ? "pointer" : "default"
-          }}
-        >Continue</button>
-      </div>
-    </div>
-  );
-};
-
 // ─── Main App ───────────────────────────────────────────────────────────────
 
 export default function App() {
-  const [apiKey, setApiKey] = useState(() => sessionStorage.getItem("mm_api_key") || "");
   const [city, setCity] = useState("");
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState(null);
@@ -402,37 +347,18 @@ export default function App() {
   const [status, setStatus] = useState("");
   const inputRef = useRef(null);
 
-  const handleApiKey = (key) => {
-    sessionStorage.setItem("mm_api_key", key);
-    setApiKey(key);
-  };
-
   const callClaude = async (messages, tools) => {
-    const body = {
-      model: "claude-sonnet-4-20250514",
-      max_tokens: 8000,
-      messages
-    };
+    const body = { messages };
     if (tools) body.tools = tools;
 
-    const res = await fetch("https://api.anthropic.com/v1/messages", {
+    const res = await fetch("/api/claude", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": apiKey,
-        "anthropic-version": "2023-06-01",
-        "anthropic-dangerous-direct-browser-access": "true"
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body)
     });
 
     if (!res.ok) {
       const errText = await res.text();
-      if (res.status === 401) {
-        sessionStorage.removeItem("mm_api_key");
-        setApiKey("");
-        throw new Error("Invalid API key. Please re-enter your key.");
-      }
       throw new Error(`API error ${res.status}: ${errText.slice(0, 200)}`);
     }
     return await res.json();
@@ -552,8 +478,6 @@ After searching, respond ONLY with JSON (no markdown, no backticks):
       minHeight: "100vh", background: "#f7f5f0", position: "relative", overflow: "hidden"
     }}>
       <StitchBackground />
-
-      {!apiKey && <ApiKeyModal onSubmit={handleApiKey} />}
 
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400;1,500&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap');
